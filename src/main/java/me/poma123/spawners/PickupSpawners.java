@@ -147,61 +147,11 @@ public class PickupSpawners extends JavaPlugin implements org.bukkit.event.Liste
         } else {
             for (String path : s.getConfig().getConfigurationSection("item").getKeys(false)) {
                 if (s.getConfig().get("item." + path + ".itemstack") == null) {
-                    String mat;
-                    if (s.getConfig().getString("item." + path + ".material") != null) {
-                        mat = s.getConfig().getString("item." + path + ".material");
-                    } else {
-                        mat = "";
-                        continue;
-                    }
-                    ItemStack local = new ItemStack(Material.BEDROCK, 1);
-                    if (Material.getMaterial(mat) == null && XMaterial.fromString(mat) == null && Material.valueOf(mat) == null) {
-                        local = new ItemStack(Material.BEDROCK, 1);
-                    } else {
-                        if (Material.valueOf(mat) != null) {
-                            local = new ItemStack(Material.valueOf(mat));
-                        } else if (Material.getMaterial(mat) != null) {
-                            local = new ItemStack(Material.getMaterial(mat));
-                        } else if (Material.getMaterial(XMaterial.fromString(mat).parseMaterial().toString()) != null) {
-                            local = new ItemStack(Material.getMaterial(XMaterial.fromString(mat).parseMaterial().toString()));
-                        }
-                    }
-
-                    ItemMeta im = local.getItemMeta();
-                    if (s.getConfig().get("item." + path + ".enchants") != null) {
-                        for (String ench : s.getConfig().getStringList("item." + path + ".enchants")) {
-                            if (ench.contains(":")) {
-                                if (Enchantment.getByName(ench.split(":")[0].toUpperCase()) != null) {
-                                    im.addEnchant(Enchantment.getByName(ench.split(":")[0].toUpperCase()), Integer.parseInt(ench.split(":")[1]), false);
-                                }
-                            } else {
-                                if (Enchantment.getByName(ench.toUpperCase()) != null) {
-                                    im.addEnchant(Enchantment.getByName(ench.toUpperCase()), 1, false);
-                                }
-                            }
-
-                        }
-                        local.setItemMeta(im);
-                    }
-                    s.getConfig().set("item." + path + ".itemstack", local);
-
-
-                } else {
-                    try {
-                        ItemStack im = (ItemStack) s.getConfig().get("item." + path + ".itemstack");
-                    } catch (Exception e) {
-                        s.getConfig().set("item." + path + ".material_old", s.getConfig().getString("item." + path + ".itemstack.type"));
-                        XMaterial xmat = XMaterial.requestXMaterial(s.getConfig().getString("item." + path + ".itemstack.type"), (Byte) s.getConfig().get("item." + path + ".itemstack.damage"));
-                        s.getConfig().set("item." + path + ".itemstack", xmat.parseItem());
-
-                    }
-
+                	getLogger().warning("Invalid breaker item: " + path + ". Removed.");
+                	s.getConfig().set("item." + path, null);
                 }
-
             }
             s.saveConfig();
-
-
         }
 
         /*

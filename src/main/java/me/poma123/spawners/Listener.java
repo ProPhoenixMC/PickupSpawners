@@ -27,6 +27,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
@@ -39,6 +40,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.CreatureSpawner;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
@@ -429,102 +431,72 @@ public class Listener implements org.bukkit.event.Listener {
     }
 
 
-    public boolean isItemStacksGood(ItemStack saved, ItemStack used, String path) {
+    public boolean isItemStacksGood(ItemStack saved, ItemStack used) {
         if (used == null) {
             System.out.println("§c[PickupSpawners] The spawner breaker item (used) is null. Please create an issue with the following stacktrace on github.com/poma123/PickupSpawners");
             return false;
         }
+        
         if (saved == null) {
             System.out.println("§c[PickupSpawners] The spawner breaker item (saved) is null. Please create an issue with the following stacktrace on github.com/poma123/PickupSpawners");
             return false;
         }
+        
         if (used.hasItemMeta() && saved.hasItemMeta()) {
             ItemMeta savedM = saved.getItemMeta();
             ItemMeta usedM = used.getItemMeta();
-            boolean disp = true;
-            boolean lore = true;
-            boolean enchants = true;
-            boolean material = true;
-            boolean damage = true;
-            if (used.getType().equals(saved.getType())) {
-                material = true;
-            } else {
-                material = false;
+
+            if (!used.getType().equals(saved.getType())) {
+            	return false;
             }
             if (savedM.hasDisplayName()) {
                 if (!usedM.hasDisplayName()) {
-                    disp = false;
+                	return false;
                 } else {
-                    if (usedM.getDisplayName().equalsIgnoreCase(savedM.getDisplayName())) {
-                        disp = true;
-                    } else {
-                        disp = false;
+                    if (!usedM.getDisplayName().equalsIgnoreCase(savedM.getDisplayName())) {
+                    	return false;
                     }
                 }
             }
             if (savedM.hasLore()) {
                 if (!usedM.hasLore()) {
-                    lore = false;
+                	return false;
                 } else {
-                    if (usedM.getLore().equals(savedM.getLore())) {
-                        lore = true;
-                    } else {
-                        lore = false;
+                    if (!usedM.getLore().equals(savedM.getLore())) {
+                    	return false;
                     }
                 }
             }
 
 			if (savedM instanceof Damageable && ((Damageable) savedM).hasDamage()) {
 				if (usedM instanceof Damageable && ((Damageable) usedM).hasDamage()) {
-					if (((Damageable) usedM).getDamage() == ((Damageable) savedM).getDamage()) {
-						damage = true;
-					} else {
-						damage = false;
+					if (((Damageable) usedM).getDamage() != ((Damageable) savedM).getDamage()) {
+						return false;
 					}
 				} else {
-					damage = false;
+					return false;
 				}
 			}
 
             if (savedM.hasEnchants()) {
                 if (!usedM.hasEnchants()) {
-                    enchants = false;
+                	return false;
                 } else {
-                    boolean containsAllEnchants = false;
-                    String enchantments = "";
-                    for (String ench : sett.getConfig().getStringList("item." + path + ".enchants")) {
-
-                        if (ench.contains(":")) {
-                            enchantments = enchantments + "(?=.*" + ench.split(":")[0].toUpperCase() + "]="
-                                    + ench.split(":")[1] + ")";
-                        } else {
-                            enchantments = enchantments + "(?=.*" + ench.toUpperCase() + "]=" + ")";
-                        }
-                    }
-
-                    Pattern pattern = Pattern.compile(enchantments);
-                    if (pattern.matcher(used.getEnchantments().toString().toUpperCase()).find()) {
-                        containsAllEnchants = true;
-                    }
-
-                    if (containsAllEnchants) {
-                        enchants = true;
-                    } else {
-                        enchants = false;
-                    }
+                	for (Entry<Enchantment, Integer> entry : savedM.getEnchants().entrySet()) {
+                		if (usedM.getEnchantLevel(entry.getKey()) < entry.getValue()) {
+                			return false;
+                		}
+					}
                 }
             }
 
-            if (disp && lore && enchants && material && damage) {
-                return true;
-            }
-
-
+            return true;
         } else {
             if (used.equals(saved)) {
                 return true;
             }
         }
+        
         return false;
     }
 
@@ -560,9 +532,7 @@ public class Listener implements org.bukkit.event.Listener {
                     return;
                 }
                 
-               /* Material mat = Material
-                        .matchMaterial(sett.getConfig().getString("item." + string + ".material").toUpperCase());*/
-                if (isItemStacksGood(breakerItem, item, string)) {
+                if (isItemStacksGood(breakerItem, item)) {
                     if (sett.getConfig().get("item." + string + ".permission") != null) {
                         if (e.getPlayer().hasPermission(sett.getConfig().getString("item." + string + ".permission"))) {
                             isGoodItem = true;
