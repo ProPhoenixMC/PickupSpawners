@@ -1,10 +1,13 @@
 package me.poma123.spawners.gui;
 
-import me.poma123.spawners.PickupSpawners;
-import me.poma123.spawners.SettingsManager;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.inventory.Inventory;
@@ -12,11 +15,8 @@ import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import me.poma123.spawners.PickupSpawners;
+import me.poma123.spawners.SettingsManager;
 
 public class PickupGui implements Listener {
 
@@ -25,8 +25,6 @@ public class PickupGui implements Listener {
     SettingsManager s = SettingsManager.getInstance();
 
     public void mainSpawnersGui(Player p) {
-
-
         Inventory inv = ps.getServer().createInventory(null, 27, "§1PickupSpawners Main Page");
 
 
@@ -138,9 +136,8 @@ public class PickupGui implements Listener {
                     for (String str : s.getConfig().getStringList("item." + path + ".enchants")) {
                         str.replace("_", " ").replace(":", " ");
                         lore.add("§7" + str.replaceFirst("" + str.charAt(0), "" + Character.toUpperCase(str.charAt(0))));
-
-
                     }
+                    
                     meta.addEnchant(Enchantment.getByName("SILK_TOUCH"), 1, true);
                     meta.addItemFlags(ItemFlag.HIDE_ENCHANTS, ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_DESTROYS);
                     lore.add("");
@@ -201,27 +198,14 @@ public class PickupGui implements Listener {
             inv.setItem(listByPage.indexOf(stack), stack);
         }
 
-        if (ps.isOnePointThirteen || ps.isOnePointFourteenPlus || ps.isOnePointSixteenPlus) {
-            ItemStack back = GuiItem.getGuiSkullItem("MHF_ArrowLeft", "§aBack", Arrays.asList(backPageButtonAction.contains("pageBack_") ?
-                    "§7Back to page " + (page - 1) : "§7Back to the main menu..."));
-            inv.setItem(27, back);
-            if (page < sublists.size()) {
-                ItemStack next = GuiItem.getGuiSkullItem("MHF_ArrowRight", "§aNext",
-                        Arrays.asList(
-                                "§7Go to page " + (page + 1)));
-                inv.setItem(35, next);
-            }
-        } else {
-            ItemStack back = GuiItem.getGuiItem(Material.ARROW, 1, "§aBack", Arrays.asList(backPageButtonAction.contains("pageBack_") ?
-                    "§7Back to page " + (page - 1) : "§7Back to the main menu..."));
-            inv.setItem(27, back);
-            if (page < sublists.size()) {
-                ItemStack next = GuiItem.getGuiItem(Material.ARROW, 1, "§aNext",
-                        Arrays.asList(
-                                "§7Go to page " + (page + 1)));
-                inv.setItem(35, next);
-            }
+        ItemStack back = GuiItem.getGuiSkullItem("MHF_ArrowLeft", "§aBack", Arrays.asList(backPageButtonAction.contains("pageBack_") ?
+                "§7Back to page " + (page - 1) : "§7Back to the main menu..."));
+        inv.setItem(27, back);
+        if (page < sublists.size()) {
+            ItemStack next = GuiItem.getGuiSkullItem("MHF_ArrowRight", "§aNext", Arrays.asList("§7Go to page " + (page + 1)));
+            inv.setItem(35, next);
         }
+
 
         p.openInventory(inv);
     }
@@ -229,7 +213,6 @@ public class PickupGui implements Listener {
 
     public void spawnerGiveList(Player p, int page) {
         Inventory inv = ps.getServer().createInventory(null, 54, "§1PickupSpawners > Give");
-
 
         final int n = 45;
         List<String> arr = ps.entities;
@@ -249,65 +232,30 @@ public class PickupGui implements Listener {
             backPageButtonAction = "pageBack_";
         }
 
-
         List<String> listByPage = sublists.get(page - 1);
 
-        if (ps.isOnePointThirteen || ps.isOnePointFourteenPlus || ps.isOnePointSixteenPlus) {
-            for (String s : listByPage) {
-                if (s.equalsIgnoreCase("pig_zombie")) {
-                    ItemStack item = new ItemStack(Material.getMaterial("ZOMBIE_PIGMAN_SPAWN_EGG"));
-                    ItemMeta itemMeta = item.getItemMeta();
-                    itemMeta.setDisplayName("§6§l" + "Zombie_pigman");
-                    item.setItemMeta(itemMeta);
-                    inv.setItem(listByPage.indexOf(s), item);
-                } else {
-                    ItemStack item;
-                    if (Material.getMaterial(s.toUpperCase() + "_SPAWN_EGG") == null) {
-                        item = new ItemStack(Material.GHAST_SPAWN_EGG);
-                    } else {
-                        item = new ItemStack(Material.getMaterial(s.toUpperCase() + "_SPAWN_EGG"));
-                    }
-
-                    ItemMeta itemMeta = item.getItemMeta();
-                    itemMeta.setDisplayName("§6§l" + s.replaceFirst("" + s.charAt(0), "" + Character.toUpperCase(s.charAt(0))));
-                    item.setItemMeta(itemMeta);
-                    inv.setItem(listByPage.indexOf(s), item);
-                }
+        for (String s : listByPage) {
+            ItemStack item;
+            if (Material.getMaterial(s.toUpperCase() + "_SPAWN_EGG") == null) {
+                item = new ItemStack(Material.GHAST_SPAWN_EGG);
+            } else {
+                item = new ItemStack(Material.getMaterial(s.toUpperCase() + "_SPAWN_EGG"));
             }
-        } else {
 
-            for (String s : listByPage) {
-                ItemStack item = new ItemStack(Material.getMaterial("MONSTER_EGG"), 1, EntityType.valueOf(s.toUpperCase()).getTypeId());
-                ItemMeta itemMeta = item.getItemMeta();
-                itemMeta.setDisplayName("§6§l" + s.replaceFirst("" + s.charAt(0), "" + Character.toUpperCase(s.charAt(0))));
-                item.setItemMeta(itemMeta);
-                inv.setItem(listByPage.indexOf(s), item);
-
-                //   System.out.println(item.getData() + " " + EntityType.valueOf(s.toUpperCase()).getTypeId());
-            }
+            ItemMeta itemMeta = item.getItemMeta();
+            itemMeta.setDisplayName("§6§l" + s.replaceFirst("" + s.charAt(0), "" + Character.toUpperCase(s.charAt(0))));
+            item.setItemMeta(itemMeta);
+            inv.setItem(listByPage.indexOf(s), item);
         }
 
-        if (ps.isOnePointThirteen || ps.isOnePointFourteenPlus || ps.isOnePointSixteenPlus) {
-            ItemStack back = GuiItem.getGuiSkullItem("MHF_ArrowLeft", "§aBack", Arrays.asList(backPageButtonAction.contains("pageBack_") ?
-                    "§7Back to page " + (page - 1) : "§7Back to the main menu..."));
-            inv.setItem(45, back);
-            if (page < sublists.size()) {
-                ItemStack next = GuiItem.getGuiSkullItem("MHF_ArrowRight", "§aNext",
-                        Arrays.asList(
-                                "§7Go to page " + (page + 1)));
-                inv.setItem(53, next);
-            }
-        } else {
-            ItemStack back = GuiItem.getGuiItem(Material.ARROW, 1, "§aBack", Arrays.asList(backPageButtonAction.contains("pageBack_") ?
-                    "§7Back to page " + (page - 1) : "§7Back to the main menu..."));
-            inv.setItem(45, back);
-            if (page < sublists.size()) {
-                ItemStack next = GuiItem.getGuiItem(Material.ARROW, 1, "§aNext",
-                        Arrays.asList(
-                                "§7Go to page " + (page + 1)));
-                inv.setItem(53, next);
-            }
+        ItemStack back = GuiItem.getGuiSkullItem("MHF_ArrowLeft", "§aBack", Arrays.asList(backPageButtonAction.contains("pageBack_") ?
+                "§7Back to page " + (page - 1) : "§7Back to the main menu..."));
+        inv.setItem(45, back);
+        if (page < sublists.size()) {
+            ItemStack next = GuiItem.getGuiSkullItem("MHF_ArrowRight", "§aNext", Arrays.asList("§7Go to page " + (page + 1)));
+            inv.setItem(53, next);
         }
+
 
         p.openInventory(inv);
 
@@ -315,28 +263,6 @@ public class PickupGui implements Listener {
 
 
     public ItemStack getSpawnegg(String type) {
-
-        if (ps.isOnePointSixteenPlus) {
-
-            if (type.equalsIgnoreCase("PIG_ZOMBIE")) {
-                return new ItemStack(Material.ZOMBIFIED_PIGLIN_SPAWN_EGG, 1);
-            } else {
-                return new ItemStack(Material.getMaterial(type.toUpperCase() + "_SPAWN_EGG"));
-            }
-
-        } else if (ps.isOnePointThirteen || ps.isOnePointFourteenPlus) {
-            if (type.equalsIgnoreCase("PIG_ZOMBIE")) {
-                return new ItemStack(Material.getMaterial("ZOMBIE_PIGMAN_SPAWN_EGG"), 1);
-            } else {
-                return new ItemStack(Material.getMaterial(type.toUpperCase() + "_SPAWN_EGG"));
-            }
-        } else {
-
-            return new ItemStack(Material.getMaterial("MONSTER_EGG"), 1,
-                    EntityType.valueOf(type.toUpperCase()).getTypeId()
-            );
-        }
-
-
+    	return new ItemStack(Material.getMaterial(type.toUpperCase() + "_SPAWN_EGG"));
     }
 }

@@ -32,6 +32,7 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -184,19 +185,7 @@ public class PSCommand implements CommandExecutor, TabCompleter {
                             }
 
                             if (localEntities.contains(args[1].toLowerCase())) {
-
-
-                                Block b = null;
-
-                                if (ps.isOnePointFourteenPlus) {
-                                    b = player.getTargetBlockExact(5);
-                                } else if (ps.isOnePointThirteen) {
-                                    b = player.getTargetBlockExact(5);
-                                } else {
-                                    b = player.getTargetBlock((HashSet<Material>) null, 5);
-                                }
-
-
+                                Block b = player.getTargetBlockExact(5);
 
                                 if (b != null) {
                                     if (b.getType().equals(ps.material)) {
@@ -266,7 +255,7 @@ public class PSCommand implements CommandExecutor, TabCompleter {
                                     ItemMeta swmeta = spawner.getItemMeta();
                                     // swmeta.setLocalizedName();
                                     swmeta.setDisplayName("§e" + spawnedType.toLowerCase() + " §7Spawner");
-
+                                    swmeta.addItemFlags(ItemFlag.HIDE_POTION_EFFECTS);
                                     spawner.setItemMeta(swmeta);
 
                                     player.getInventory().addItem(spawner);
@@ -342,18 +331,11 @@ public class PSCommand implements CommandExecutor, TabCompleter {
                 } else if (args[0].equalsIgnoreCase("additem")) {
                     //TODO 1.8-1.12 materialdata support
                     if (sender.hasPermission("pickupspawners.additem")) {
-                        ItemStack itemstack;
+                        ItemStack itemstack = p.getInventory().getItemInMainHand();
                        /* XMaterial xmat;
                         ItemStack output;
                         byte data;*/
-                        if (ps.getVersion().contains("1_8_R")) {
-
-                            itemstack = p.getInventory().getItemInHand();
-
-                        } else {
-                            itemstack = p.getInventory().getItemInMainHand();
-
-                        }
+                        
                         if (!itemstack.getType().equals(Material.AIR)) {
                          /*   if (ps.getVersion().contains("1_8_R")) {
 

@@ -1,16 +1,16 @@
 package me.poma123.spawners.gui;
 
-import com.mojang.authlib.GameProfile;
-import com.mojang.authlib.properties.Property;
-import com.mojang.authlib.properties.PropertyMap;
-import me.poma123.spawners.PickupSpawners;
+import java.util.UUID;
+
 import org.apache.commons.codec.binary.Base64;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 
-import java.util.UUID;
+import com.mojang.authlib.GameProfile;
+import com.mojang.authlib.properties.Property;
+import com.mojang.authlib.properties.PropertyMap;
 
 /**
  * Represents some special mob heads, also support creating player skulls and custom skulls.
@@ -57,30 +57,11 @@ public enum Skull {
 
     private static final Base64 base64 = new Base64();
     private String id;
-    private static PickupSpawners ps = PickupSpawners.getInstance();
 
     private Skull(String id) {
         this.id = id;
     }
 
-    /**
-     * Return a skull that has a custom texture specified by url.
-     *
-     * @return itemstack
-     */
-
-    public static ItemStack getSkullMaterial(String type) {
-        if (type.equalsIgnoreCase("player")) {
-            ItemStack skull;
-            if (ps.isOnePointThirteen || ps.isOnePointFourteenPlus || ps.isOnePointSixteenPlus) {
-               skull = new ItemStack(Material.PLAYER_HEAD, 1);
-            } else {
-                skull = new ItemStack(Material.getMaterial("SKULL"), 1, (short) 3);
-            }
-            return skull;
-        }
-        return null;
-    }
     public static ItemStack getCustomSkull(String url) {
         GameProfile profile = new GameProfile(UUID.randomUUID(), null);
         PropertyMap propertyMap = profile.getProperties();
@@ -89,7 +70,7 @@ public enum Skull {
         }
         byte[] encodedData = base64.encode(String.format("{textures:{SKIN:{url:\"%s\"}}}", url).getBytes());
         propertyMap.put("textures", new Property("textures", new String(encodedData)));
-        ItemStack head = getSkullMaterial("player");
+        ItemStack head = new ItemStack(Material.PLAYER_HEAD, 1);
         ItemMeta headMeta = head.getItemMeta();
         Class<?> headMetaClass = headMeta.getClass();
         Reflections.getField(headMetaClass, "profile", GameProfile.class).set(headMeta, profile);
@@ -105,7 +86,7 @@ public enum Skull {
      */
     @SuppressWarnings("deprecation")
     public static ItemStack getPlayerSkull(String name) {
-        ItemStack itemStack = getSkullMaterial("player");
+        ItemStack itemStack = new ItemStack(Material.PLAYER_HEAD, 1);
         SkullMeta meta = (SkullMeta) itemStack.getItemMeta();
         meta.setOwner(name);
         itemStack.setItemMeta(meta);
@@ -128,7 +109,7 @@ public enum Skull {
      */
     @SuppressWarnings("deprecation")
     public ItemStack getSkull() {
-        ItemStack itemStack = getSkullMaterial("player");
+        ItemStack itemStack = new ItemStack(Material.PLAYER_HEAD, 1);
         SkullMeta meta = (SkullMeta) itemStack.getItemMeta();
         meta.setOwner(id);
         itemStack.setItemMeta(meta);
