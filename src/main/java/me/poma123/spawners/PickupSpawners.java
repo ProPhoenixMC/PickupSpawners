@@ -43,7 +43,6 @@ public class PickupSpawners extends JavaPlugin implements org.bukkit.event.Liste
     
     private static final Set<String> noSpawnEggEntities = Set.of("ILLUSIONER","GIANT","ENDER_DRAGON","WITHER");
     
-    static VaultAPI vault;
     private static PickupSpawners instance;
     public int ID = 62455;
     SettingsManager s = SettingsManager.getInstance();
@@ -61,31 +60,8 @@ public class PickupSpawners extends JavaPlugin implements org.bukkit.event.Liste
     	return RandomStringUtils.random(length, true, true);
     }
 
-    public static VaultAPI getVault() {
-        return vault;
-    }
-
-    public static boolean isInteger(String object) {
-        try {
-            Integer.parseInt(object);
-        } catch (NumberFormatException ex) {
-            return false;
-        }
-        return true;
-    }
-
-    public static boolean isDouble(String object) {
-        try {
-            Double.parseDouble(object);
-        } catch (NumberFormatException ex) {
-            return false;
-        }
-        return true;
-    }
-
     @Override
     public void onEnable() {
-        vault = new VaultAPI(this);
         Language.saveLocales();
 
         getLogger().info("-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-");
@@ -127,7 +103,6 @@ public class PickupSpawners extends JavaPlugin implements org.bukkit.event.Liste
         /*
          * Config saving
          */
-
         try {
             saveConfig();
         } catch (Exception e) {
@@ -141,13 +116,9 @@ public class PickupSpawners extends JavaPlugin implements org.bukkit.event.Liste
         saveDefaultConfig();
         s.setup(PickupSpawners.getPlugin(PickupSpawners.class));
 
-
-
         /*
          * Setting new configuration sections
          */
-
-
         if (getConfig().get("break-limits") == null) {
 
             if (getConfig().get("daily-broke-limit") != null) {
@@ -159,14 +130,6 @@ public class PickupSpawners extends JavaPlugin implements org.bukkit.event.Liste
             saveConfig();
 
         }
-/*        if (s.getConfig().get("break-on-explosions") == null) {
-            s.getConfig().set("break-on-explosions.enabled", false);
-            s.getConfig().set("break-on-explosions.chance", 50);
-            s.saveConfig();
-        }*/
-
-
-
 
         /*
          * Setting the default spawner breaker item if the list is empty
@@ -240,9 +203,6 @@ public class PickupSpawners extends JavaPlugin implements org.bukkit.event.Liste
 
 
         }
-
-
-
 
         /*
          * Update check
