@@ -20,6 +20,8 @@ package me.poma123.spawners;
 import me.poma123.spawners.gui.PickupGui;
 import me.poma123.spawners.language.Language;
 import me.poma123.spawners.language.Language.LocalePath;
+import me.poma123.spawners.listener.Listener;
+
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -42,7 +44,7 @@ import java.util.*;
 public class PSCommand implements CommandExecutor, TabCompleter {
     PickupSpawners ps = PickupSpawners.getInstance();
     EntityType[] values = EntityType.values();
-    SettingsManager sett = SettingsManager.getInstance();
+    SettingsManager sett = PickupSpawners.getInstance().getSettingsManager();
 
     public void sendHelp(CommandSender sender) {
         sender.sendMessage(
@@ -262,17 +264,17 @@ public class PSCommand implements CommandExecutor, TabCompleter {
 
                                     player.sendMessage(Language.getReplacedLocale(player, LocalePath.GIVE, "%count% %type%", amount + " " + spawnedType.toLowerCase()));
 
-                                    p.sendMessage(me.poma123.spawners.Listener.getLang(p).equals("hu")
+                                    p.sendMessage(me.poma123.spawners.listener.Listener.getLang(p).equals("hu")
                                             ? "§aAdtál " + amount + " §e" + spawnedType.toLowerCase() + " §aspawnert " + player.getName() + " játékosnak."
 
                                             : "§aGave " + amount + " §e" + spawnedType.toLowerCase() + " §aspawner to " + player.getName() + ".");
                                 } else {
-                                    p.sendMessage(me.poma123.spawners.Listener.getLang(p).equals("hu")
+                                    p.sendMessage(me.poma123.spawners.listener.Listener.getLang(p).equals("hu")
                                             ? "§cEz a játékos nem elérhető."
                                             : "§cThis player isn't online.");
                                 }
                             } else {
-                                p.sendMessage(me.poma123.spawners.Listener.getLang(p).equals("hu")
+                                p.sendMessage(me.poma123.spawners.listener.Listener.getLang(p).equals("hu")
                                         ? "§cA megadott entitás típus nem létezik."
                                         : "§cThis entity type is invalid.");
                             }

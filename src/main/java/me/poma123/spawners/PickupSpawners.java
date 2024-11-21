@@ -17,25 +17,27 @@
 
 package me.poma123.spawners;
 
-import me.poma123.spawners.language.Language;
-import net.md_5.bungee.api.ChatColor;
-import org.apache.commons.lang.RandomStringUtils;
-import org.bukkit.Bukkit;
-import org.bukkit.Material;
-import org.bukkit.enchantments.Enchantment;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.plugin.java.JavaPlugin;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
-public class PickupSpawners extends JavaPlugin implements org.bukkit.event.Listener {
+import org.apache.commons.lang.RandomStringUtils;
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.EntityType;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.plugin.java.JavaPlugin;
+
+import me.poma123.spawners.language.Language;
+import me.poma123.spawners.listener.BlockEventListener;
+import me.poma123.spawners.listener.Listener;
+import net.md_5.bungee.api.ChatColor;
+
+public class PickupSpawners extends JavaPlugin {
 
     public static boolean debug = false;
     public static Material material = Material.getMaterial("SPAWNER");
@@ -44,16 +46,23 @@ public class PickupSpawners extends JavaPlugin implements org.bukkit.event.Liste
     private static final Set<String> noSpawnEggEntities = Set.of("ILLUSIONER","GIANT","ENDER_DRAGON","WITHER");
     
     private static PickupSpawners instance;
+    private SettingsManager settingsManager;
+    private LimitManager limitManager;
+    
     public int ID = 62455;
-    SettingsManager s = SettingsManager.getInstance();
     private Metrics metrics;
 
-    public PickupSpawners() {
-        instance = this;
-    }
-
     public static PickupSpawners getInstance() {
+    	if (instance == null) throw new IllegalStateException("The plugin is not in initalized state");
         return instance;
+    }
+    
+    public SettingsManager getSettingsManager() {
+    	return settingsManager;
+    }
+    
+    public LimitManager getLimitManager() {
+    	return limitManager;
     }
 
     public static String generateRandomString(int length) {
@@ -62,6 +71,10 @@ public class PickupSpawners extends JavaPlugin implements org.bukkit.event.Liste
 
     @Override
     public void onEnable() {
+    	instance = this;
+    	settingsManager = new SettingsManager(this);
+    	limitManager = new LimitManager(this);
+    	
         Language.saveLocales();
 
         getLogger().info("-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-");
@@ -98,23 +111,8 @@ public class PickupSpawners extends JavaPlugin implements org.bukkit.event.Liste
          * Listener registering
          */
         Bukkit.getPluginManager().registerEvents(new Listener(), this);
-        Bukkit.getPluginManager().registerEvents(this, this);
-        
-        /*
-         * Config saving
-         */
-        try {
-            saveConfig();
-        } catch (Exception e) {
-            for (Player p : Bukkit.getOnlinePlayers()) {
-                if (p.isOp()) {
-                    p.sendMessage("§c[PickupSpawners] Plugin is disabled: Wrong breaker items. Please clear them, and setup the breaker items again.");
-                }
-            }
-            getLogger().warning("§c[PickupSpawners] Plugin is disabled: Wrong breaker items. Please clear them, and setup the breaker items again.");
-        }
-        saveDefaultConfig();
-        s.setup(PickupSpawners.getPlugin(PickupSpawners.class));
+        Bukkit.getPluginManager().registerEvents(new BlockEventListener(this), this);
+
 
         /*
          * Setting new configuration sections
@@ -134,30 +132,30 @@ public class PickupSpawners extends JavaPlugin implements org.bukkit.event.Liste
         /*
          * Setting the default spawner breaker item if the list is empty
          */
-        if (s.getConfig().getConfigurationSection("item").getKeys(false).isEmpty()) {
+        if (settingsManager.getConfig().getConfigurationSection("item").getKeys(false).isEmpty()) {
 
             ItemStack is = new ItemStack(Material.DIAMOND_PICKAXE);
             ItemMeta im = is.getItemMeta();
             im.addEnchant(Enchantment.SILK_TOUCH, 1, false);
             is.setItemMeta(im);
-            s.getConfig().set("item.default.itemstack", is);
-            s.getConfig().set("item.default.material", "DIAMOND_PICKAXE");
-            s.getConfig().set("item.default.enchants", Arrays.asList("SILK_TOUCH"));
-            s.saveConfig();
+            settingsManager.getConfig().set("item.default.itemstack", is);
+            settingsManager.getConfig().set("item.default.material", "DIAMOND_PICKAXE");
+            settingsManager.getConfig().set("item.default.enchants", Arrays.asList("SILK_TOUCH"));
+            settingsManager.saveConfig();
         } else {
-            for (String path : s.getConfig().getConfigurationSection("item").getKeys(false)) {
-                if (s.getConfig().get("item." + path + ".itemstack") == null) {
+            for (String path : settingsManager.getConfig().getConfigurationSection("item").getKeys(false)) {
+                if (settingsManager.getConfig().get("item." + path + ".itemstack") == null) {
                 	getLogger().warning("Invalid breaker item: " + path + ". Removed.");
-                	s.getConfig().set("item." + path, null);
+                	settingsManager.getConfig().set("item." + path, null);
                 }
             }
-            s.saveConfig();
+            settingsManager.saveConfig();
         }
 
         /*
          * Update check
          */
-        if (s.getConfig().getBoolean("update-check")) {
+        if (settingsManager.getConfig().getBoolean("update-check")) {
             new Updater(this, ID, this.getFile(), Updater.UpdateType.VERSION_CHECK, true);
         }
 
@@ -169,7 +167,7 @@ public class PickupSpawners extends JavaPlugin implements org.bukkit.event.Liste
         this.metrics.addCustomChart(new Metrics.SingleLineChart("spawners_broken", new Callable<Integer>() {
             @Override
             public Integer call() throws Exception {
-                int c = Listener.breakedSpawners;
+                int c = limitManager.getBreakedSpawners();
 
                 return c;
 
@@ -179,7 +177,7 @@ public class PickupSpawners extends JavaPlugin implements org.bukkit.event.Liste
             @Override
             public String call() throws Exception {
                 String c;
-                if (s.getConfig().getBoolean("auto-locale") == true) {
+                if (settingsManager.getConfig().getBoolean("auto-locale") == true) {
                     c = "using";
                 } else {
                     c = "not using";
@@ -193,8 +191,8 @@ public class PickupSpawners extends JavaPlugin implements org.bukkit.event.Liste
             public String call() throws Exception {
                 String c = "N/A";
 
-                if (s.getConfig().getConfigurationSection("item").getValues(false) != null) {
-                    c = String.valueOf(s.getConfig().getConfigurationSection("item").getValues(false).size());
+                if (settingsManager.getConfig().getConfigurationSection("item").getValues(false) != null) {
+                    c = String.valueOf(settingsManager.getConfig().getConfigurationSection("item").getValues(false).size());
                 }
 
                 return c;

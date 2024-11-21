@@ -22,7 +22,7 @@ public class PickupGui implements Listener {
 
 
     PickupSpawners ps = PickupSpawners.getInstance();
-    SettingsManager s = SettingsManager.getInstance();
+    SettingsManager s = PickupSpawners.getInstance().getSettingsManager();
 
     public void mainSpawnersGui(Player p) {
         Inventory inv = ps.getServer().createInventory(null, 27, "§1PickupSpawners Main Page");
@@ -53,7 +53,7 @@ public class PickupGui implements Listener {
             Material matt;
             ItemStack localItemStack;
             ItemStack saved = (ItemStack) s.getConfig().get("item." + path + ".itemstack");
-            boolean isPerm = SettingsManager.getInstance().getConfig().get("item." + path + ".permission") != null;
+            boolean isPerm = s.getConfig().get("item." + path + ".permission") != null;
             try {
                 // matt = ((ItemStack) SettingsManager.getInstance().getConfig().get("item." + path + ".itemstack")).getType();
                 //matt = Material.getMaterial(SettingsManager.getInstance().getConfig().getString("item." + path + ".material"));
@@ -84,7 +84,7 @@ public class PickupGui implements Listener {
                     }
                     lore.add("");
                     if (isPerm) {
-                        lore.add("§3Permission: " + SettingsManager.getInstance().getConfig().get("item." + path + ".permission"));
+                        lore.add("§3Permission: " + s.getConfig().get("item." + path + ".permission"));
 
                     }
 
@@ -106,7 +106,7 @@ public class PickupGui implements Listener {
 
                     lore.add("");
                     if (isPerm) {
-                        lore.add("§3Permission: " + SettingsManager.getInstance().getConfig().get("item." + path + ".permission"));
+                        lore.add("§3Permission: " + s.getConfig().get("item." + path + ".permission"));
 
                     }
                     lore.add("§eBreakerID: " + path);
@@ -142,7 +142,7 @@ public class PickupGui implements Listener {
                     meta.addItemFlags(ItemFlag.HIDE_ENCHANTS, ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_DESTROYS);
                     lore.add("");
                     if (isPerm) {
-                        lore.add("§3Permission: " + SettingsManager.getInstance().getConfig().get("item." + path + ".permission"));
+                        lore.add("§3Permission: " + s.getConfig().get("item." + path + ".permission"));
 
                     }
 
@@ -156,7 +156,7 @@ public class PickupGui implements Listener {
                     List<String> lore = new ArrayList<String>();
                     lore.add("");
                     if (isPerm) {
-                        lore.add("§3Permission: " + SettingsManager.getInstance().getConfig().get("item." + path + ".permission"));
+                        lore.add("§3Permission: " + s.getConfig().get("item." + path + ".permission"));
 
                     }
                     lore.add("§cInvalid material!");

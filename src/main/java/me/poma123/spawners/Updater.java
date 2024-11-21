@@ -41,7 +41,7 @@ public class Updater {
 	// Updater thread
 	private Thread thread;
 	// Download id from version to download from spigot
-	static String downloadID;
+	public static String downloadID;
 	
 	
 	

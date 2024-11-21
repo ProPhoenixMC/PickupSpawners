@@ -19,7 +19,6 @@ package me.poma123.spawners.language;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Locale;
 
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -27,12 +26,12 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
 import me.poma123.spawners.PickupSpawners;
-import me.poma123.spawners.Listener;
 import me.poma123.spawners.SettingsManager;
+import me.poma123.spawners.listener.Listener;
 import net.md_5.bungee.api.ChatColor;
 
 public class Language {
-	static SettingsManager s = SettingsManager.getInstance();
+	static SettingsManager s = PickupSpawners.getInstance().getSettingsManager();
 	private static Plugin plugin = PickupSpawners.getPlugin(PickupSpawners.class);
 
 	public enum LocalePath {

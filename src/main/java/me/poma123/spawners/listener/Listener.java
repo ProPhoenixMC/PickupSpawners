@@ -15,49 +15,35 @@
  *       along with PickupSpawners.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
-package me.poma123.spawners;
+package me.poma123.spawners.listener;
 
-import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.Method;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.util.Arrays;
 import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.TreeMap;
-import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.CreatureSpawner;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
-import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.Plugin;
 
-import me.poma123.spawners.event.SpawnerBreakEvent;
+import me.poma123.spawners.PickupSpawners;
+import me.poma123.spawners.SettingsManager;
+import me.poma123.spawners.Updater;
 import me.poma123.spawners.event.SpawnerPlaceEvent;
 import me.poma123.spawners.gui.PickupGui;
 import me.poma123.spawners.language.Language;
@@ -68,11 +54,9 @@ import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
 
 public class Listener implements org.bukkit.event.Listener {
-    public static int breakedSpawners = 0;
     PickupSpawners ps = PickupSpawners.getInstance();
-    SettingsManager sett = SettingsManager.getInstance();
-    private Plugin plugin = PickupSpawners.getPlugin(PickupSpawners.class);
-    private Material material = PickupSpawners.material;
+    SettingsManager sett = PickupSpawners.getInstance().getSettingsManager();
+    private Plugin plugin = PickupSpawners.getInstance();
 
     public static String getLang(Player p) {
             String locale;
@@ -291,7 +275,7 @@ public class Listener implements org.bukkit.event.Listener {
                     player.sendMessage(Language.getReplacedLocale(player, LocalePath.GIVE, "%count% %type%", 1 + " " + type.toLowerCase()));
 
                 } else {
-                    player.sendMessage(me.poma123.spawners.Listener.getLang(player).equals("hu")
+                    player.sendMessage(me.poma123.spawners.listener.Listener.getLang(player).equals("hu")
                             ? "§cA megadott entitás típus nem létezik."
                             : "§cThis entity type is invalid.");
                 }
@@ -342,286 +326,6 @@ public class Listener implements org.bukkit.event.Listener {
                 }
             }
         }
-    }
-
-    private boolean isLimitBlocks(Player p) {
-        if (p.hasPermission("spawnerlimit.bypass")) {
-            return false;
-        }
-        String limitPermissionPrefix = "pickupspawners.breaklimit.";
-        Date date = new Date();
-        LocalDate localDate = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-        int year = localDate.getYear();
-        int month = localDate.getMonthValue();
-        int day = localDate.getDayOfMonth();
-
-        //    List<String> limits = new ArrayList<>();
-        NavigableMap<String, Integer> map = new TreeMap<>();
-
-        for (String str : sett.getConfig().getConfigurationSection("break-limits").getKeys(false)) {
-            // limits.add(str + ";" + sett.getConfig().get("break-limits." + str));
-            //TODO DEBUG   plugin.getLogger().info(str +": " + sett.getConfig().getInt("break-limits." + str));
-            if (str.equals("default")) {
-                //    plugin.getLogger().info("VANJOG: "+ limitPermissionPrefix + str);
-                map.put(limitPermissionPrefix + str, sett.getConfig().getInt("break-limits." + str));
-            } else if (p.hasPermission(limitPermissionPrefix + str)) {
-                // plugin.getLogger().info("VANJOG: "+ limitPermissionPrefix + str);
-                map.put(limitPermissionPrefix + str, sett.getConfig().getInt("break-limits." + str));
-            }
-        }
-
-        NavigableMap<String, Integer> sorted = sortByValues(map);
-
-        Map.Entry<String, Integer> lastEntry = sorted.firstEntry();
-        int limit = lastEntry.getValue();
-        //  System.out.println("LIMIT: " + limit);
-        //Object limit = sett.getConfig().get("daily-broke-limit");
-
-
-        int limit1 = 0;
-        try {
-
-            limit1 = limit;
-
-        } catch (Exception e) {
-            System.out.println(
-                    "§c[PickupSpawners-ERROR] The daily break limit is not an integer in the config.yml. Please fix it. Daily limit skipped.");
-            return false;
-        }
-
-
-        if (limit1 > 0) {
-            File f = new File(ps.getDataFolder() + File.separator + "daily_limits.yml");
-
-
-            if (!f.exists()) {
-
-                try {
-                    f.createNewFile();
-                    FileConfiguration conf = YamlConfiguration.loadConfiguration(f);
-                    conf.set("date", year + "_" + month + "_" + day);
-                    conf.save(f);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            FileConfiguration conf = YamlConfiguration.loadConfiguration(f);
-            if (!conf.get("date").equals(year + "_" + month + "_" + day)) {
-                conf.set("players", null);
-                conf.set("date", year + "_" + month + "_" + day);
-                try {
-                    conf.save(f);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            } else {
-                if (conf.get("players." + p.getName()) != null) {
-
-
-                    int localLimit = conf.getInt("players." + p.getName());
-                    if (localLimit >= limit1) {
-                        p.sendMessage(Language.getReplacedLocale(p, Language.LocalePath.LIMIT_REACH, "%limit%",
-                                String.valueOf(limit1)));
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
-
-    public boolean isItemStacksGood(ItemStack saved, ItemStack used) {
-        if (used == null) {
-            System.out.println("§c[PickupSpawners] The spawner breaker item (used) is null. Please create an issue with the following stacktrace on github.com/poma123/PickupSpawners");
-            return false;
-        }
-        
-        if (saved == null) {
-            System.out.println("§c[PickupSpawners] The spawner breaker item (saved) is null. Please create an issue with the following stacktrace on github.com/poma123/PickupSpawners");
-            return false;
-        }
-        
-        if (used.hasItemMeta() && saved.hasItemMeta()) {
-            ItemMeta savedM = saved.getItemMeta();
-            ItemMeta usedM = used.getItemMeta();
-
-            if (!used.getType().equals(saved.getType())) {
-            	return false;
-            }
-            if (savedM.hasDisplayName()) {
-                if (!usedM.hasDisplayName()) {
-                	return false;
-                } else {
-                    if (!usedM.getDisplayName().equalsIgnoreCase(savedM.getDisplayName())) {
-                    	return false;
-                    }
-                }
-            }
-            if (savedM.hasLore()) {
-                if (!usedM.hasLore()) {
-                	return false;
-                } else {
-                    if (!usedM.getLore().equals(savedM.getLore())) {
-                    	return false;
-                    }
-                }
-            }
-
-			if (savedM instanceof Damageable && ((Damageable) savedM).hasDamage()) {
-				if (usedM instanceof Damageable && ((Damageable) usedM).hasDamage()) {
-					if (((Damageable) usedM).getDamage() != ((Damageable) savedM).getDamage()) {
-						return false;
-					}
-				} else {
-					return false;
-				}
-			}
-
-            if (savedM.hasEnchants()) {
-                if (!usedM.hasEnchants()) {
-                	return false;
-                } else {
-                	for (Entry<Enchantment, Integer> entry : savedM.getEnchants().entrySet()) {
-                		if (usedM.getEnchantLevel(entry.getKey()) < entry.getValue()) {
-                			return false;
-                		}
-					}
-                }
-            }
-
-            return true;
-        } else {
-            if (used.equals(saved)) {
-                return true;
-            }
-        }
-        
-        return false;
-    }
-
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
-    public void onSpawnerBreak(BlockBreakEvent e) {
-        Block s = e.getBlock();
-        String lang = getLang(e.getPlayer());
-
-        if (s.getType().equals(material)) {
-            if (isLimitBlocks(e.getPlayer())) {
-
-                // e.getPlayer().sendMessage(lang.equals("hu")? "§cElérted a napi kiüthető
-                // spawner limitet (" + limitcount + ").": "§cYou have reached the daily spawner
-                // break limit (" + limitcount + ").");
-                e.setCancelled(true);
-                return;
-            }
-
-            ItemStack item = e.getPlayer().getInventory().getItemInMainHand();
-
-            boolean isGoodItem = false;
-
-            if (item == null) {
-                return;
-            }
-
-
-
-            for (String string : sett.getConfig().getConfigurationSection("item").getKeys(false)) {
-                ItemStack breakerItem = (ItemStack) sett.getConfig().get("item." + string + ".itemstack");
-
-                if (breakerItem == null) {
-                    return;
-                }
-                
-                if (isItemStacksGood(breakerItem, item)) {
-                    if (sett.getConfig().get("item." + string + ".permission") != null) {
-                        if (e.getPlayer().hasPermission(sett.getConfig().getString("item." + string + ".permission"))) {
-                            isGoodItem = true;
-                        } else {
-                            isGoodItem = false;
-                            e.setCancelled(true);
-                            e.getPlayer().sendMessage(Language.getLocale(e.getPlayer(), LocalePath.NO_PERM));
-                            break;
-                        }
-                    } else {
-                        isGoodItem = true;
-                    }
-                }
-
-                if (isGoodItem == true) {
-                    break;
-
-                }
-            }
-
-            // if (item.getType().equals(Material.DIAMOND_PICKAXE)&&
-            // item.getEnchantments().containsKey(Enchantment.SILK_TOUCH)) {
-            if (isGoodItem) {
-                if (s.getType().equals(material)) {
-
-                    Object event = new SpawnerBreakEvent(e.getPlayer(), s, item);
-
-                    CreatureSpawner cs = (CreatureSpawner) s.getState();
-
-                    if (cs.getSpawnedType() != null) {
-                    	ItemStack spawner = new ItemStack(material, 1);
-                        ItemMeta swmeta = spawner.getItemMeta();
-                        
-	                    swmeta.setDisplayName("§e" + cs.getSpawnedType().name().toLowerCase() + " §7Spawner");
-	                    swmeta.addItemFlags(ItemFlag.HIDE_POTION_EFFECTS);
-	                    e.setExpToDrop(0);
-	                    spawner.setItemMeta(swmeta);
-	
-	                    Bukkit.getPluginManager().callEvent((Event) event);
-	
-	                    if (((SpawnerBreakEvent) event).isCancelled()) {
-	                        return;
-	                    }
-	
-	                    s.getWorld().dropItemNaturally(s.getLocation(), spawner);
-	                    e.getPlayer().sendMessage(Language.getReplacedLocale(e.getPlayer(), LocalePath.BREAK, "%type%",
-	                            cs.getSpawnedType().name().toLowerCase()));
-                    }
-
-                    breakedSpawners++;
-                    // e.getPlayer().sendMessage(lang.equals("hu")? "§7Kiütöttél egy §e" +
-                    // cs.getSpawnedType().name().toLowerCase() + " §7spawnert!" : "§7You have
-                    // broken out one §e" + cs.getSpawnedType().name().toLowerCase() + "§7
-                    // spawner.");
-                    if (!e.getPlayer().hasPermission("spawnerlimit.bypass")) {
-                        File f = new File(ps.getDataFolder() + File.separator + "daily_limits.yml");
-
-                        FileConfiguration conf = YamlConfiguration.loadConfiguration(f);
-                        if (conf.get("players." + e.getPlayer().getName()) != null) {
-                            Integer value = conf.getInt("players." + e.getPlayer().getName()) + 1;
-
-                            conf.set("players." + e.getPlayer().getName(), value);
-                            try {
-                                conf.save(f);
-                            } catch (IOException e1) {
-                                e1.printStackTrace();
-                            }
-
-                        } else {
-                            conf.set("players." + e.getPlayer().getName(), 1);
-                            try {
-                                conf.save(f);
-                            } catch (IOException e1) {
-                                e1.printStackTrace();
-                            }
-                        }
-                    }
-                }
-            } else {
-                if (!e.getPlayer().hasPermission("pickupspawners.bypasspickupblock")) {
-                    e.getPlayer().sendMessage(Language.getLocale(e.getPlayer(), Language.LocalePath.CANNOT_PICKUP));
-                    e.setCancelled(true);
-                }
-            }
-        }
-    }
-
-    public boolean compareTwoList(List<String> models, String str) {
-        return Arrays.asList(str).stream().allMatch(t -> models.stream().anyMatch(t::contains));
     }
 
 
