@@ -91,6 +91,11 @@ public class LimitManager {
 	    	prepareDailyLimitsFile();
 	    	
 	    	FileConfiguration conf = YamlConfiguration.loadConfiguration(dailyLimitsFile);
+	    	if (!conf.getString("date", "default").equals(getTimestamp())) {
+	    		resetDailyLimitsFile();
+	    		return;
+	    	}
+	    	
 	    	ConfigurationSection playersSection = conf.getConfigurationSection("players");
 	    	if (playersSection != null) {
 		    	for (String playerName : playersSection.getKeys(false)) {
